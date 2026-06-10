@@ -19,6 +19,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+    cRGFW.link_libc = true;
     cRGFW.addIncludePath(b.path("."));
     if (wayland) cRGFW.addIncludePath(b.path("xdg"));
 
