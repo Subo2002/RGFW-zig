@@ -16,3 +16,9 @@ extern fn RGFW_window_shouldClose(win: *Window) bool;
 pub fn windowShouldClose(win: *Window) bool {
     return RGFW_window_shouldClose(win);
 }
+
+pub const Event = opaque {};
+extern fn RGFW_window_checkEvent(win: *Window, event: *Event) bool;
+pub fn windowCheckEvent(win: *Window, event: *Event) bool {
+    return RGFW_window_checkEvent(win, event);
+}
