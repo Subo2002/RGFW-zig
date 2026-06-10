@@ -8,28 +8,42 @@ pub fn build(b: *std.Build) void {
     const wayland = b.option(bool, "wayland", "enables wayland") orelse false;
     const vulkan = b.option(bool, "vulkan", "enables vulkan") orelse false;
 
-    const cRGFW = b.addTranslateC(.{ .link_libc = true, .target = target, .optimize = optimize, .root_source_file = b.path("RGFW.h") });
+    //const cRGFW = b.addTranslateC(.{
+    //    .link_libc = true,
+    //    .target = target,
+    //    .optimize = optimize,
+    //    .root_source_file = b.path("RGFW.h"),
+    //});
+    const cRGFW = b.addModule("RGFW", .{
+        .root_source_file = b.path("src/root.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
     cRGFW.addIncludePath(b.path("."));
-
     if (wayland) cRGFW.addIncludePath(b.path("xdg"));
 
-    cRGFW.defineCMacro("RGFW_IMPLEMENTATION", "");
-    if (opengl) cRGFW.defineCMacro("RGFW_OPENGL", "");
-    if (wayland) cRGFW.defineCMacro("RGFW_WAYLAND", "");
-    if (vulkan) cRGFW.defineCMacro("RGFW_VULKAN", "");
+    cRGFW.addCMacro("RGFW_IMPLEMENTATION", "");
+    if (opengl) cRGFW.addCMacro("RGFW_OPENGL", "");
+    if (wayland) cRGFW.addCMacro("RGFW_WAYLAND", "");
+    if (vulkan) cRGFW.addCMacro("RGFW_VULKAN", "");
 
-    const mod = cRGFW.addModule("RGFW");
+    //const mod = cRGFW.addModule("RGFW");
+    cRGFW.addCSourceFile(.{
+        .file = b.path("rgfw.c"),
+        // We pass the macros to the C compiler so it builds correctly
+        .flags = &.{},
+    });
 
     switch (target.result.os.tag) {
         .linux, .freebsd, .openbsd, .dragonfly => {
-            if (opengl) mod.linkSystemLibrary("GL", .{ .needed = true });
-            if (vulkan) mod.linkSystemLibrary("vulkan", .{ .needed = true });
+            if (opengl) cRGFW.linkSystemLibrary("GL", .{ .needed = true });
+            if (vulkan) cRGFW.linkSystemLibrary("vulkan", .{ .needed = true });
             if (wayland) {
                 if (opengl) {
-                    mod.linkSystemLibrary("EGL", .{ .needed = true });
-                    mod.linkSystemLibrary("wayland-egl", .{ .needed = true });
+                    cRGFW.linkSystemLibrary("EGL", .{ .needed = true });
+                    cRGFW.linkSystemLibrary("wayland-egl", .{ .needed = true });
                 }
-                mod.addCSourceFiles(.{ .files = &.{
+                cRGFW.addCSourceFiles(.{ .files = &.{
                     "xdg/xdg-shell.c",
                     "xdg/xdg-toplevel-icon-v1.c",
                     "xdg/xdg-output-unstable-v1.c",
@@ -37,24 +51,24 @@ pub fn build(b: *std.Build) void {
                     "xdg/relative-pointer-unstable-v1.c",
                     "xdg/pointer-constraints-unstable-v1.c",
                 } });
-                mod.addIncludePath(b.path("xdg"));
-                mod.linkSystemLibrary("wayland-client", .{ .needed = true });
-                mod.linkSystemLibrary("wayland-cursor", .{ .needed = true });
-                mod.linkSystemLibrary("xkbcommon", .{ .needed = true });
+                cRGFW.addIncludePath(b.path("xdg"));
+                cRGFW.linkSystemLibrary("wayland-client", .{ .needed = true });
+                cRGFW.linkSystemLibrary("wayland-cursor", .{ .needed = true });
+                cRGFW.linkSystemLibrary("xkbcommon", .{ .needed = true });
             } else {
-                mod.linkSystemLibrary("x11", .{ .needed = true });
-                mod.linkSystemLibrary("xrandr", .{ .needed = true });
+                cRGFW.linkSystemLibrary("x11", .{ .needed = true });
+                cRGFW.linkSystemLibrary("xrandr", .{ .needed = true });
             }
         },
         .macos => {
-            mod.linkFramework("CoreVideo", .{ .needed = true });
-            mod.linkFramework("Cocoa", .{ .needed = true });
-            mod.linkFramework("IOKit", .{ .needed = true });
-            if (opengl) mod.linkFramework("OpenGL", .{ .needed = true });
+            cRGFW.linkFramework("CoreVideo", .{ .needed = true });
+            cRGFW.linkFramework("Cocoa", .{ .needed = true });
+            cRGFW.linkFramework("IOKit", .{ .needed = true });
+            if (opengl) cRGFW.linkFramework("OpenGL", .{ .needed = true });
         },
         .windows => {
-            mod.linkSystemLibrary("gdi32", .{ .needed = true });
-            if (opengl) mod.linkSystemLibrary("opengl32", .{ .needed = true });
+            cRGFW.linkSystemLibrary("gdi32", .{ .needed = true });
+            if (opengl) cRGFW.linkSystemLibrary("opengl32", .{ .needed = true });
         },
         else => {},
     }
