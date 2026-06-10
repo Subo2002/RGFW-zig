@@ -29,7 +29,7 @@ pub fn build(b: *std.Build) void {
 
     //const mod = cRGFW.addModule("RGFW");
     cRGFW.addCSourceFile(.{
-        .file = b.path("rgfw.c"),
+        .file = b.path("RGFW.c"),
         // We pass the macros to the C compiler so it builds correctly
         .flags = &.{},
     });
