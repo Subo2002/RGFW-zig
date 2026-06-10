@@ -15,7 +15,7 @@ pub fn build(b: *std.Build) void {
     //    .root_source_file = b.path("RGFW.h"),
     //});
     const cRGFW = b.addModule("RGFW", .{
-        .root_source_file = b.path("src/root.zig"),
+        .root_source_file = b.path("ZRGFW.zig"),
         .target = target,
         .optimize = optimize,
     });
